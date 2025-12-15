@@ -36,6 +36,9 @@ MANIFEST
 pip-log.txt
 pip-delete-this-directory.txt
 
+# Large installer artifacts (don’t commit)
+*.deb
+
 # Unit test / coverage reports
 htmlcov/
 .tox/
