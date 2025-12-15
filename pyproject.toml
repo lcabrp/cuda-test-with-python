@@ -1,7 +1,9 @@
 [project]
 name = "cuda-test-with-python"
 version = "0.1.0"
-description = "Add your description here"
+description = "Testing with GPU acceleration"
 readme = "README.md"
-requires-python = ">=3.13"
-dependencies = []
+requires-python = ">=3.12"
+dependencies = [
+    "ipykernel>=7.1.0",
+]
