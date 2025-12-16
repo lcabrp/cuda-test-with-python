@@ -3,6 +3,10 @@ Testing PyTorch + TensorFlow with GPU acceleration (when available).
 
 This repo is intentionally small and beginner-friendly: it focuses on a couple of GPU checks and simple training examples.
 
+Notebooks:
+- [notebooks/gpu-ops-test.ipynb](notebooks/gpu-ops-test.ipynb) — GPU sanity checks + two TensorFlow training examples
+- [notebooks/gpu-datasets-pandas.ipynb](notebooks/gpu-datasets-pandas.ipynb) — pandas dataset workflows + where GPU can help (cuDF optional)
+
 ## Quick start (uv)
 
 - Create/sync the environment:
@@ -17,11 +21,74 @@ Notes:
 - The project is pinned to **Python 3.12.x** (see `requires-python` in `pyproject.toml` and `.python-version`).
 - GPU acceleration depends on **system** prerequisites (drivers/toolkit), not just Python packages.
 
+Optional (CuPy benchmarks):
+- Install the optional GPU array library extra: `uv sync --extra gpu`
+
+## Optional: GPU dataframe acceleration with RAPIDS/cuDF (cudf.pandas)
+
+This repo runs on **CPU by default**.
+
+In [notebooks/gpu-datasets-pandas.ipynb](notebooks/gpu-datasets-pandas.ipynb) there is an *optional* cell that tries to enable the pandas accelerator:
+
+- `cudf.pandas` accelerates *some* pandas operations on the GPU with minimal/no code changes.
+- If it is not installed, you will see: `GPU acceleration disabled (cudf.pandas not available).` (this is expected).
+
+Important distinction:
+- **CuPy** (`import cupy as cp`) = GPU **NumPy-like arrays** (great for numeric compute).
+- **cuDF** (`import cudf`) = GPU **DataFrames** (pandas-like API; often uses CuPy/RMM under the hood).
+
+### Installing RAPIDS/cuDF (recommended: separate environment)
+
+RAPIDS/cuDF is usually installed via **conda/mamba** (especially on Linux/WSL), and it often needs tighter CUDA+driver compatibility than typical PyPI packages.
+Because of that, it’s commonly best to use a **separate** environment + Jupyter kernel for RAPIDS.
+
+Example (WSL2/Linux, adjust versions to your machine):
+
+```bash
+conda create -n rapids -c rapidsai -c conda-forge -c nvidia \
+	"rapids=25.08" "python=3.12" "cuda-version>=12.0,<=12.9"
+conda activate rapids
+conda install -c conda-forge ipykernel
+python -m ipykernel install --user --name rapids --display-name "RAPIDS (Py 3.12)"
+```
+
+Then switch the notebook kernel to the RAPIDS kernel and run the notebook.
+
+Official install guide (conda/pip/docker + compatibility): https://docs.rapids.ai/install/
+
 ## GPU vs CPU behavior
 
 - If a compatible NVIDIA GPU is available, the notebook will use it automatically.
 - If no GPU is available (or drivers aren’t set up), the notebook should still run and will print that it is using CPU.
 - The first notebook “sanity check” cell is written to avoid crashes even when no GPU is present.
+
+## Starting on a new Windows PC
+
+What `uv sync` guarantees:
+- A reproducible **Python** environment (packages pinned by `uv.lock`).
+- This repo is pinned to **Python 3.12.x** (`>=3.12,<3.13`) because some CUDA-related wheels/tooling lag behind 3.13.
+
+Recommended commands:
+- Install Python 3.12 via uv (if needed): `uv python install 3.12`
+- Create the env (strict): `uv sync --frozen`
+
+What `uv sync` does *not* guarantee (system dependencies):
+- NVIDIA driver setup
+- GPU availability/visibility inside your runtime (native Windows vs WSL)
+- CUDA Toolkit availability (e.g., `ptxas`, `nvcc`) when required by some TensorFlow/XLA GPU paths
+
+Practical expectations:
+- **PyTorch**: will use CUDA if available; otherwise runs on CPU. The matrix-multiply notebook cell auto-selects CPU vs CUDA.
+- **TensorFlow**: may run CPU-only on native Windows depending on the installed TensorFlow build; GPU support is typically smoother on Linux/WSL.
+- For “same behavior as this repo’s WSL setup”, use **WSL2 + NVIDIA Windows driver with WSL support**, then install CUDA Toolkit *inside WSL*.
+
+## Native Linux
+
+This notebook should work on native Linux as well.
+
+- **CPU-only Linux**: everything should run (PyTorch + TensorFlow fall back to CPU).
+- **Linux + NVIDIA GPU**: GPU acceleration requires the NVIDIA driver stack on the host.
+- **CUDA Toolkit (`ptxas`, `nvcc`)**: some TensorFlow/XLA GPU paths may require CUDA Toolkit binaries; the training example tries to add `/usr/local/cuda/bin` to the kernel `PATH` when present.
 
 ### Portability expectations
 
