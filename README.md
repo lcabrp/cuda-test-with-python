@@ -52,7 +52,40 @@ conda install -c conda-forge ipykernel
 python -m ipykernel install --user --name rapids --display-name "RAPIDS (Py 3.12)"
 ```
 
+Example (your working setup: RAPIDS 25.12 + TensorFlow + CUDA-enabled PyTorch in one env):
+
+```bash
+conda create -n rapids-25.12 -c rapidsai -c conda-forge \
+	rapids=25.12 python=3.12 'cuda-version>=12.2,<=12.9' \
+	tensorflow 'pytorch=*=*cuda*'
+
+conda activate rapids-25.12
+
+# Add a Jupyter kernel for this environment
+conda install -c conda-forge ipykernel
+python -m ipykernel install --user --name rapids-25.12 --display-name "RAPIDS 25.12 (CUDA 12.9)"
+```
+
 Then switch the notebook kernel to the RAPIDS kernel and run the notebook.
+
+#### Why PyTorch GPU install can fail in the RAPIDS env
+
+RAPIDS releases are built against a specific CUDA minor version range (e.g. RAPIDS 25.12 typically pulls CUDA **12.9** components such as `libnvjitlink`).
+
+The PyTorch conda GPU meta-package (`pytorch-cuda=12.4`, `12.1`, etc.) pins *different* CUDA minor versions.
+If those pins disagree, the conda solver will fail with an error similar to:
+
+- RAPIDS/cuDF requires `libnvjitlink >=12.9.*`
+- `pytorch-cuda=12.4` requires `libnvjitlink 12.4.*`
+
+In that case, there is no single environment that satisfies both sets of constraints.
+
+Recommended options:
+
+1) **Keep RAPIDS in its own environment** (best for stability) and use a separate ML environment for PyTorch/TensorFlow GPU.
+2) If you only need PyTorch for *CPU* in the RAPIDS env, install **CPU-only PyTorch** (no `pytorch-cuda`), and keep GPU work in the ML env.
+
+(It’s sometimes possible to mix conda RAPIDS with `pip install torch` CUDA wheels in the same env, but it’s a higher-risk setup; prefer separate envs unless you’re ok debugging shared-library version issues.)
 
 Official install guide (conda/pip/docker + compatibility): https://docs.rapids.ai/install/
 
